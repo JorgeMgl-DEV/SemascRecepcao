@@ -14,7 +14,7 @@ import {
   where,
 } from "firebase/firestore"
 import type { Timestamp } from "firebase/firestore"
-import { db } from "../lib/firebase"
+import { db, firebaseInitialized } from "../lib/firebase"
 import { SERVICES } from "../data/services"
 import { useAuth } from "../auth/AuthContext"
 
@@ -73,12 +73,27 @@ export default function Recepcao() {
 
   // Assina a lista do dia
   useEffect(() => {
+    if (!firebaseInitialized || !db) {
+      setItems([])
+      return
+    }
+
     const q = query(collection(db, "atendimentos"), where("diaKey", "==", diaKey), orderBy("createdAt", "desc"))
-    const unsub = onSnapshot(q, (snap) => {
-      const list: Atendimento[] = []
-      snap.forEach((d) => list.push({ id: d.id, ...(d.data() as any) }))
-      setItems(list)
-    })
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const list: Atendimento[] = []
+        snap.forEach((d) => list.push({ id: d.id, ...(d.data() as any) }))
+        setItems(list)
+      },
+      (err) => {
+        console.error('[Recepcao] onSnapshot error:', err)
+        // show a simple message in UI by setting items empty and showing error state
+        setItems([])
+        setErro('Falha ao conectar com o banco. Tente recarregar a página ou contate o administrador.')
+      },
+    )
+
     return () => unsub()
   }, [diaKey])
 
@@ -90,6 +105,8 @@ export default function Recepcao() {
     if (cpf.length !== 11) return setErro("CPF deve ter 11 dígitos.")
 
     try {
+      if (!firebaseInitialized || !db) throw new Error('Firebase não inicializado')
+
       await addDoc(collection(db, "atendimentos"), {
         nome: nome.trim(),
         cpf,
@@ -104,7 +121,7 @@ export default function Recepcao() {
       setCpfMasked("")
       setServico(SERVICES[0])
     } catch {
-      setErro("Falha ao salvar. Tente novamente.")
+      setErro("Falha ao salvar. Tente novamente. (ver console para detalhes)")
     }
   }
 
@@ -118,6 +135,11 @@ export default function Recepcao() {
       if (payload.cpf.length !== 11) return // ignora salvar cpf inválido
     } else {
       payload[field] = value.trim()
+    }
+    if (!firebaseInitialized || !db) {
+      setErro('Firebase não inicializado')
+      setEditingId(null)
+      return
     }
     await updateDoc(doc(db, "atendimentos", id), payload)
     setEditingId(null)

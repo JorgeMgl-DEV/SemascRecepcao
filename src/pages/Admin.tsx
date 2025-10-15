@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { collection, getDocs, query, where } from "firebase/firestore"
 import type { Timestamp } from "firebase/firestore"
-import { db } from "../lib/firebase"
+import { db, firebaseInitialized } from "../lib/firebase"
 import { useAuth } from "../auth/AuthContext"
 import { SERVICES } from "../data/services"
 import { exportToCSV, exportToXLSX, exportSummaryXLSX } from "../utils/exporters"
@@ -52,6 +52,8 @@ export default function Admin() {
   async function fetchData() {
     setLoading(true)
     try {
+      if (!firebaseInitialized || !db) throw new Error('Firebase não inicializado')
+
       const clauses: any[] = [where("diaKey", ">=", start), where("diaKey", "<=", end)]
       if (servico !== "(todos)") clauses.push(where("servico", "==", servico))
       const q = query(collection(db, "atendimentos"), ...clauses)

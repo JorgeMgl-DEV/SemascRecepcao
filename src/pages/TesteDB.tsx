@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { db, firebaseInitialized } from '../lib/firebase'
 import { useAuth } from '../auth/AuthContext'
 
 export default function TesteDB() {
@@ -10,6 +10,7 @@ export default function TesteDB() {
     async function testar() {
         setStatus('gravando...')
         try {
+            if (!firebaseInitialized || !db) throw new Error('Firebase não inicializado')
             const ref = await addDoc(collection(db, 'atendimentos'), {
                 nome: 'Teste DB',
                 cpf: '00000000000',

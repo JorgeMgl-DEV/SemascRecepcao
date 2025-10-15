@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut, signInWithEmailAndPassword, type User } from 'firebase/auth'
-import { auth } from '../lib/firebase'
+import { auth, firebaseInitialized } from '../lib/firebase'
 
 type AuthCtx = {
   user: User | null
@@ -17,6 +17,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!firebaseInitialized || !auth) {
+      console.warn('[AuthContext] Firebase not initialized; auth unavailable.')
+      setUser(null)
+      setLoading(false)
+      return
+    }
+
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u)
       setLoading(false)
@@ -25,10 +32,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   async function login(email: string, password: string) {
+    if (!firebaseInitialized || !auth) throw new Error('Auth não inicializado')
     await signInWithEmailAndPassword(auth, email, password)
   }
 
   async function logout() {
+    if (!firebaseInitialized || !auth) throw new Error('Auth não inicializado')
     await signOut(auth)
   }
 

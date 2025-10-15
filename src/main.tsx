@@ -1,6 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
+import { createHashRouter, RouterProvider, Navigate } from 'react-router-dom'
 import './index.css'
 import { AuthProvider, useAuth } from './auth/AuthContext'
 import { ProtectedRoute } from './auth/ProtectedRoute'
@@ -13,7 +13,7 @@ function RoleRedirect() {
   return <Navigate to={isAdmin ? '/admin' : '/recepcao'} replace />
 }
 
-const router = createBrowserRouter([
+const router = createHashRouter([
   { path: '/', element: <Login /> },
   { path: '/recepcao', element: <ProtectedRoute><Recepcao /></ProtectedRoute> },
   { path: '/admin', element: <ProtectedRoute><Admin /></ProtectedRoute> },
